@@ -12,8 +12,9 @@ Share the SQL editor or the slides. Keep this file on a screen you do not share.
 | 14:00–20:00 | Create, seed, chunks | `sql/01_hypertable.sql`, then `sql/02_seed.sql` |
 | 20:00–25:00 | Look at `focus-log` in Explorer | No new SQL |
 | 25:00–33:00 | Three questions | `sql/03_queries.sql`, one query at a time |
-| 33:00–40:00 | Summary page | `sql/05_continuous_aggregate.sql`, one block at a time |
-| 40:00–45:00 | Repo URL, spoken | No new slide |
+| 33:00–38:00 | First summary, one month | `sql/05_continuous_aggregate.sql`, one block at a time |
+| 38:00–43:00 | Older month, summary grows | `sql/06_second_month.sql`, one block at a time |
+| 43:00–45:00 | Three project ideas and the repo URL | No new slide |
 
 `sql/04_alternates.sql` is optional. Use it only if chat asks and you are ahead.
 
@@ -22,14 +23,6 @@ Share the SQL editor or the slides. Keep this file on a screen you do not share.
 - **Tiger Data** is the company. It used to be called Timescale. **Tiger Cloud** is the managed service on screen.
 - **TimescaleDB** is the PostgreSQL extension. It is not a second database.
 - The sentence to repeat: "Same PostgreSQL, with time-series parts switched on."
-
-## Do not say
-
-- Do not say Tiger Data wins every benchmark, or quote a speedup you have not just shown.
-- If someone asks "is it faster than X?", say: "The reason in this workshop is one database, automatic time partitioning, summaries that stay current, and ordinary SQL. Speed depends on the workload. Tiger publishes numbers on their site. We are not reproducing those today."
-- Do not compare products as a buying guide. Stay on what this database is good at.
-- Do not invent an answer. A true line is: "I don't want to make that up on stream. The docs link is in the repo, and I'll follow up in chat."
-- Hypercore and tiered storage get one sentence each, at the end, and then you stop.
 
 ## Analogies you can reuse
 
@@ -157,13 +150,13 @@ Why this block exists: raw rows are a diary, and buckets are the summary a perso
 
 **If a query errors:** read the rescue under that query in the SQL file, say it, and go to the next query. Do not edit SQL on camera.
 
-## 33:00–40:00 — Continuous aggregate
+## 33:00–38:00 — Continuous aggregate
 
-Run `sql/05_continuous_aggregate.sql` one block at a time. Wait for each success. Pasting the whole file can fail because the refresh needs the view to exist outside the statement that created it.
+Run `sql/05_continuous_aggregate.sql` one block at a time. Wait for each success. Pasting the whole file can fail because the refresh needs the view to exist outside the statement that created it. Skip the Explorer click in this block. The second month needs the time.
 
 **Block 1.** "A continuous aggregate is a materialized view TimescaleDB knows how to refresh. `WITH NO DATA` creates the page immediately, empty, so we are not stuck waiting inside the create."
 
-**Block 2.** "This fills `study_daily` now: one row per course per day. A dashboard reads that page instead of rereading 2,880 sessions every time it loads." If you are still inside this block's time, click **Explorer**, filter **Caggs**, and open `study_daily`. Say: "This is the empty spot from earlier. It is the daily summary now." Then come back to the SQL editor. Skip this click if you are behind.
+**Block 2.** "This fills `study_daily` now: one row per course per day. A dashboard reads that page instead of rereading 2,880 sessions every time it loads."
 
 **Block 3.** "This schedules the refresh we are not waiting for. Once an hour, recent daily buckets get updated. The integer on screen is a job id. Any integer means the schedule exists."
 
@@ -175,7 +168,27 @@ Why: the point of the feature is to not rescan history on every page load. How: 
 
 **If block 3 fails:** the page is already filled. Skip the schedule and run block 4.
 
-## 40:00–45:00 — Send them home
+## 38:00–43:00 — Another month
+
+Run `sql/06_second_month.sql` one block at a time. This does not rebuild `students` or `courses`. It adds the 30 days before the month already loaded.
+
+**Block 1.** "Another month of the same log. Everyone stays on their home course. The raw table goes from 2,880 sessions to 5,760. The summary has not been rewritten yet."
+
+**Block 2, span query first.** "The summary query can already see the new rows. The oldest day jumps back 30 days, and the summary grows from 113 rows to 233."
+
+**Block 2, older-day query second.** "A day in that older month is the steady pattern: Databases and Data Structures at 960 minutes, Calculus and Writing at 480. The cram week is still only the recent 7 days."
+
+**Block 3.** "The hourly schedule only looks back 30 days, so it would not have stored this older month on its own. This refresh writes those days into the summary."
+
+**Block 4.** "Same oldest day, same 233 rows. The refresh saved what the previous read already showed."
+
+Why: new sessions do not erase the deadline week, and an older month outside the 30-day schedule has to be refreshed on purpose. How: insert, read the summary, refresh, read it again.
+
+**If the span query still shows 113 rows:** real-time aggregation is off. That is not a failure. Run block 3, then run the two block 2 queries again. The change appears after the refresh.
+
+**If sessions is 8,640:** the file was pasted twice. On stream, do not reset. Describe the older-day pattern from the script and close.
+
+## 43:00–45:00 — Send them home
 
 Put the repository URL on screen in the editor as a comment, or just say it and leave it in the chat:
 
@@ -183,21 +196,7 @@ Put the repository URL on screen in the editor as a comment, or just say it and 
 -- Repo: paste your URL here before the stream
 ```
 
-Say: "Same shape for any of these projects. A timestamp, a thing you measure, a question over time."
-
-- Focus Log, the demo: sessions over a semester.
-- API heartbeat: latency and error rate for a portfolio site. This is the one that shows up in jobs.
-- A season diary: rank and score across a game season.
-- A personal Wrapped: music, gym, or coffee, grouped by week.
-- A study-room sensor: temperature and occupancy, so you stop walking to a full library.
-- Stream pulse: chat messages per minute. You are watching one of those right now.
-
-"Two things we did not demo. Hypercore is Tiger's storage engine: recent rows stay easy to update, older data is stored in a column layout, and Tiger documents large storage savings from that. Tiered storage can move cold data to cheaper object storage and still query it. Both are real. A retention policy, dropping raw rows you no longer need, is the other lever. None of the three fit this 45 minutes."
-
-"Replay is the SQL files in order. The picture of the tables is `SCHEMA.md`. The shortest official next step is the Tiger 5-minute quickstart, then the first-hypertable page."
-
-- https://www.tigerdata.com/docs/get-started/quickstart/quickstart-5-minutes
-- https://www.tigerdata.com/docs/build/how-to/your-first-hypertable
+Say: "Same shape for any of these. A timestamp, a thing you measure, a question over time. An API's latency. A game season. A personal Wrapped for music, gym, or coffee. The SQL files in this repo are the replay. The picture of the tables is `SCHEMA.md`."
 
 Stop talking while the URL is readable.
 
@@ -206,6 +205,7 @@ Stop talking while the URL is readable.
 - If Explorer takes more than 20 seconds to find, skip the rest of the tour and start the questions.
 - Minute 30: skip `sql/04_alternates.sql`.
 - Minute 36: skip the policy. Refresh and run the last `SELECT`.
+- Minute 40: if you have not started the second month, skip it and close.
 - The close can be three project ideas and the URL.
 
 ## Optional answers
