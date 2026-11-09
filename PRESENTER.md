@@ -23,14 +23,6 @@ Share the SQL editor or the slides. Keep this file on a screen you do not share.
 - **TimescaleDB** is the PostgreSQL extension. It is not a second database.
 - The sentence to repeat: "Same PostgreSQL, with time-series parts switched on."
 
-## Do not say
-
-- Do not say Tiger Data wins every benchmark, or quote a speedup you have not just shown.
-- If someone asks "is it faster than X?", say: "The reason in this workshop is one database, automatic time partitioning, summaries that stay current, and ordinary SQL. Speed depends on the workload. Tiger publishes numbers on their site. We are not reproducing those today."
-- Do not compare products as a buying guide. Stay on what this database is good at.
-- Do not invent an answer. A true line is: "I don't want to make that up on stream. The docs link is in the repo, and I'll follow up in chat."
-- Hypercore and tiered storage get one sentence each, at the end, and then you stop.
-
 ## Analogies you can reuse
 
 - **Time series.** Each row stores what happened and when. That timestamp is what lets you group the rows by hour or day.
