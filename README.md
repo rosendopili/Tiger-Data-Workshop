@@ -13,8 +13,9 @@ Tiger Data is the company behind **TimescaleDB**, a PostgreSQL extension. Tiger 
 | 9–20 | A hypertable, then 2,880 planted study sessions |
 | 20–25 | The `focus-log` service in Tiger Console: two tables, one hypertable, and its chunks |
 | 25–33 | Three questions: best hour, library vs dorm, the week before a deadline |
-| 33–40 | A continuous aggregate, so a dashboard does not reread the whole month |
-| 40–45 | Project ideas and where to go next |
+| 33–38 | A continuous aggregate for the first month |
+| 38–43 | Another month of sessions, and the daily summary grows to cover it |
+| 43–45 | Project ideas and where to go next |
 
 The picture of the tables is [SCHEMA.md](SCHEMA.md). The timed script, including what to do when a paste fails, is [PRESENTER.md](PRESENTER.md). Setup for the host is [prep/CHECKLIST.md](prep/CHECKLIST.md).
 
@@ -22,7 +23,7 @@ The picture of the tables is [SCHEMA.md](SCHEMA.md). The timed script, including
 
 You do not need to bring a dataset. `sql/02_seed.sql` generates it.
 
-Six students, every hour from 8:00am through 11:00pm Eastern, for the 30 days ending yesterday. That is 2,880 rows in `study_sessions`. `students` and `courses` are small ordinary tables beside the log.
+Six students, every hour from 8:00am through 11:00pm Eastern, for the 30 days ending yesterday. That is 2,880 rows in `study_sessions`. `sql/06_second_month.sql` adds the 30 days before that, another 2,880 rows, after the daily summary exists. `students` and `courses` are small ordinary tables beside the log.
 
 The seed is deterministic. These results are the ones the demo expects:
 
@@ -53,6 +54,7 @@ SELECT current_date;
    - `sql/02_seed.sql`
    - Each statement in `sql/03_queries.sql`
    - Each block in `sql/05_continuous_aggregate.sql`
+   - Each block in `sql/06_second_month.sql`
 
 `sql/04_alternates.sql` answers the extra questions: caffeine, the busiest spot, and a join back to `students`.
 

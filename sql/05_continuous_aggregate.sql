@@ -1,5 +1,5 @@
 -- 05_continuous_aggregate.sql
--- Clock: minutes 33–40. Run ONE block at a time, in order.
+-- Clock: minutes 33–38. Run ONE block at a time, in order.
 -- Do not paste the whole file. Creating the view and refreshing it in one
 -- transaction can fail. Wait for each block to succeed before the next.
 --
