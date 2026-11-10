@@ -40,9 +40,9 @@ Create one Tiger Cloud service. Do not create a second service, a replica, or a 
   3. `sql/02_seed.sql` — last grid is the chunk list, and the count is 2,880
   4. Click **Explorer** on `focus-log`. Confirm `students`, `courses`, and `study_sessions`. Open `study_sessions` and confirm the chunk timeline. The **Caggs** filter should be empty.
   5. Each statement in `sql/03_queries.sql`, one at a time
-  6. Each block in `sql/05_continuous_aggregate.sql`, one at a time
-  7. Each block in `sql/06_second_month.sql`, one at a time. Sessions become 5,760. The summary's oldest day is about 60 days back, and `summary_rows` is 233.
-14. Confirm the shape, not just that it ran: 10 AM focus is 92.7, 11 PM is 37.5, weeknight Library is 77.3 and Dorm is 60.6, Databases goes from 960 minutes a day to 3,200. After `sql/06`, an older day shows Databases and Data Structures at 960, and Calculus and Writing at 480.
+  6. Each block in `sql/04_continuous_aggregate.sql`, one at a time
+  7. Each block in `sql/05_second_month.sql`, one at a time. Sessions become 5,760. The summary's oldest day is about 60 days back, and `summary_rows` is 233.
+14. Confirm the shape, not just that it ran: 10 AM focus is 92.7, 11 PM is 37.5, the Library averages 79.1 and the Dorm is about 48, Databases goes from 960 minutes a day to 3,200. After `sql/05`, an older day shows Databases and Data Structures at 960, and Calculus and Writing at 480.
 15. Run `sql/00_reset.sql` again when rehearsal is over so the livestream starts empty.
 16. For every later run, start with `sql/00_reset.sql` in the same SQL editor, then build from `sql/01_hypertable.sql` onward. Keep the `focus-log` service. Destroy the tables, not the service.
 
@@ -51,20 +51,14 @@ Create one Tiger Cloud service. Do not create a second service, a replica, or a 
 - Tiger Cloud tab is logged in. Run `SELECT current_date;` once. You want today's date and nothing else.
 - `slides/index.html` is on slide 1.
 - `PRESENTER.md` is on a screen you will not share.
-- A timer is visible to you for the blocks 0:00, 4:00, 9:00, 14:00, 20:00, 25:00, 33:00, 38:00, and 43:00.
+- A timer is visible to you for the blocks 0:00, 4:00, 9:00, 14:00, 20:00, 25:00, 36:00, 40:00, and 44:00.
 - Chat is open. The one question you will ask, around minute 25, is: "What would you ask this table?"
 - Confirm the editor is empty: `sql/00_reset.sql` has been run, and `SELECT current_date;` returns today.
 - Water, zoom at 150%, notifications silenced on the shared screen.
 
-## If the console stalls
-
-Reload the SQL editor tab and paste `SELECT current_date;` again. Stay in Tiger Cloud.
-
-If a later paste fails because an object is half-created, run `sql/00_reset.sql`, then repeat the file you were on. The seed is a few seconds. If the data is already loaded and only the next query failed, do not reset. Continue at the next statement.
-
 ## If you are behind the clock
 
-- At minute 30, skip `sql/04_alternates.sql`.
-- At minute 36, skip the policy block in `sql/05`. Run the refresh and the final `SELECT`.
-- At minute 40, if the second month has not started, skip `sql/06_second_month.sql` and close.
+- At minute 33, if you have not run the last statement in `sql/03_queries.sql`, the one that compares the earlier 23 days with the final 7 days, run that statement and then open `sql/04`. Leave the remaining statements.
+- At minute 38, skip the schedule statement in `sql/04_continuous_aggregate.sql`. Run the refresh, then the last `SELECT` in that file.
+- At minute 42, if the second month has not started, skip `sql/05_second_month.sql` and close.
 - The closing can be three sentences and the repo URL. Do not add a sixth slide.

@@ -1,6 +1,6 @@
 # Presenter guide — 45 minutes
 
-You do not need to be a Timescale expert. Read the line, paste the file it names, and check the result against the number in this guide. If a paste fails, say the rescue line once and move forward.
+You do not need to be a Timescale expert. Paste the file this guide names. Above each statement, the SQL file has three labels: **What the SQL does**, **Expected result**, and **What that result means**. Read those before you interpret the grid.
 
 Share the SQL editor or the slides. Keep this file on a screen you do not share.
 
@@ -11,12 +11,10 @@ Share the SQL editor or the slides. Keep this file on a screen you do not share.
 | 9:00–14:00 | SQL editor | `SELECT current_date;` |
 | 14:00–20:00 | Create, seed, chunks | `sql/01_hypertable.sql`, then `sql/02_seed.sql` |
 | 20:00–25:00 | Look at `focus-log` in Explorer | No new SQL |
-| 25:00–33:00 | Three questions | `sql/03_queries.sql`, one query at a time |
-| 33:00–38:00 | First summary, one month | `sql/05_continuous_aggregate.sql`, one block at a time |
-| 38:00–43:00 | Older month, summary grows | `sql/06_second_month.sql`, one block at a time |
-| 43:00–45:00 | Three project ideas and the repo URL | No new slide |
-
-`sql/04_alternates.sql` is optional. Use it only if chat asks and you are ahead.
+| 25:00–36:00 | The questions, one at a time | `sql/03_queries.sql` |
+| 36:00–40:00 | First summary, one month | `sql/04_continuous_aggregate.sql`, one block at a time |
+| 40:00–44:00 | Older month, summary grows | `sql/05_second_month.sql`, one block at a time |
+| 44:00–45:00 | Three project ideas and the repo URL | No new slide |
 
 ## Names
 
@@ -58,7 +56,7 @@ Slides 5 and 6. Then leave the slides. Do not come back to them during the SQL.
 3. "Daily totals stay up to date. A screen of hours and places can read the summary instead of every session."
 4. "It is still PostgreSQL. Same SQL, same drivers, same tools."
 
-**Slide 6.** "Three things in the demo. A hypertable is the sessions table, split by time for you. A time bucket groups those sessions into an hour or a day. A continuous aggregate is daily totals the database keeps up to date. The queries are normal SQL."
+**Slide 6.** "There are three things in the demo. A hypertable is the sessions table, split by time for you. A time bucket groups those sessions into an hour or a day. A continuous aggregate is the daily totals the database keeps up to date. The queries are normal SQL."
 
 Why: the room should know the destination before the console. How: two slides, then screen-share the SQL editor.
 
@@ -72,31 +70,23 @@ Paste only this:
 SELECT current_date;
 ```
 
-Say: "We are connected. The question for the next half hour is: when should I study, where, and for which class? The data is a student app called Focus Log. Six people, a month of hourly sessions. I am going to paste the SQL. I am not going to type it."
+Say: "We are connected. The question for the next half hour is when you should study, where, and for which class. The data is a student app called Focus Log. Six people logged a month of hourly sessions. I am going to paste the SQL, and I am not going to type it."
 
-Optional, about 20 seconds, around the moment you create the table: flash `SCHEMA.md` if it is already rendered, then come straight back. If the preview is fiddly, skip it. The schema file is for the repo. It is not its own section.
+Optional, about 20 seconds, around the moment you create the table: flash `SCHEMA.md` if it is already open, then come straight back. The schema file is for the repo. It is not its own section.
 
 Why: a live connection is more convincing than a diagram of a connection. How: one tiny query whose result you can predict, because it is today's date.
 
-**If `current_date` fails:** reload the Tiger Cloud SQL editor and paste it again. Stay in the console. Do not switch to a local database.
+## 14:00–20:00 — Hypertable and the month of data
 
-## 14:00–23:00 — Hypertable and the month of data
-
-Paste `sql/01_hypertable.sql` as one run.
-
-Say: "This is a normal `CREATE TABLE`. The extra is `tsdb.hypertable`. TimescaleDB will partition `study_sessions` by time into chunks. A chunk is a weekly chapter. `segmentby` keeps one student's rows together inside a chapter. `orderby` stores newest time first. We still `INSERT` and `SELECT` with normal SQL. The grid should list `study_sessions`."
+Paste `sql/01_hypertable.sql` as one run. Read the three labels above the statement, then say the line there. The grid should name `study_sessions`.
 
 Why: attendees need to see that the special table still looks like PostgreSQL. How: one `CREATE TABLE`, then a catalog query so the word "hypertable" is on screen.
 
-**If the `WITH` clause errors:** paste the rescue block at the bottom of `sql/01_hypertable.sql`. Say "Older syntax, same idea: create the table, then turn it into a hypertable."
+Paste `sql/02_seed.sql` as one run. Read the three labels above the statement, then say the line there.
 
-Paste `sql/02_seed.sql` as one run.
+Point at the chunk grid and say: "These rows are the time slices. I did not create them. Thirty days of data landed in a handful of weekly chunks." The count above that grid is the number in **Expected result**.
 
-Say: "Six students. Every hour from 8am to 11pm Eastern, for the 30 days ending yesterday. 2,880 sessions. The patterns are planted, so we can predict the answers. Focus peaks at 10am. The library beats the dorm on weeknights. In the last week, four students cram Databases."
-
-Point at the chunk grid. "These rows are the chapters. I did not create them. Thirty days of data landed in a handful of weekly chunks. The count just above is 2,880."
-
-Say this so you do not get dragged into a benchmark: "At a few thousand rows, a plain table is still fast. We are not going to race them. The SQL is identical on purpose. This is the version that still works when the log is every student for a year, or every request to an API."
+Say: "At a few thousand rows, a plain table is still fast. We are not going to race them. The SQL is the same either way. This is the version that still works when the log is every student for a year, or every request to an API."
 
 Who is who, if you need it:
 
@@ -105,90 +95,118 @@ Who is who, if you need it:
 - Priya Shah, Mathematics, Calculus
 - Riley Brooks, English, Writing
 
-**If the seed errors with "already exists":** you rehearsed and did not reset. Say "That copy is from rehearsal." Run `sql/00_reset.sql`, then `01`, then `02`.
-
-**If the chunk columns error:** the insert already worked. Paste the `show_chunks` rescue at the bottom of `sql/02_seed.sql`.
-
 ## 20:00–25:00 — Look at the database
 
 Stay on the `focus-log` service. This is the console, not more SQL. Do not click **Convert to columnstore** or turn on **Automated chunk tuning**. Leave **Show catalog objects** off. Catalog tables will flood the list.
 
 1. If the top of the page says **Data view**, switch the toggle to **Ops view**.
-2. Click **Explorer**.
-3. On the home tab, point at **General information**. You should see `students`, `courses`, and `study_sessions`. Say: "Two ordinary tables, and one hypertable. The students and the courses live next to the log."
-4. In the **Schemas** pane, filter to **Tables**. Click `students`. Point at the columns `name`, `school_year`, and `major`. Say: "Six students. This is a normal PostgreSQL table."
-5. Click `courses`. Say: "Four courses. Also a normal table."
-6. Filter to **Hypertables** and click `study_sessions`. Point at the approximate row count, about 2,880, and at the chunk timeline. Say: "These chunks are the time slices. Each one covers about a week. I did not create them one by one. The database did that when the rows arrived."
-7. Filter to **Caggs**. The list is empty. Say: "The daily summary is not here yet. We build it after the questions."
-8. Open the SQL editor again. The floating editor, or **SQL Editor** at the bottom, both work.
+2. Click **Explorer**. The object list is the **Schemas** pane. There is no home tab.
+3. Filter that pane to **Tables**. You should see `students` and `courses`. Say: "These are two ordinary tables. The students and the courses live right next to the log."
+4. Click `students`. That tab shows the columns, not the rows. Click `+`, paste this, and click **Run**.
 
-**If Explorer is not where you expect:** search the Schemas pane for `study_sessions` and open that. If you still cannot find it after about 20 seconds, say "The object list is being shy. The SQL already showed the chunks," and go to the questions.
+```sql
+SELECT name, school_year, major
+FROM students
+ORDER BY name;
+```
 
-## 25:00–33:00 — Three questions
+Say: "Here are the six students. This is a normal PostgreSQL table, and these are the actual rows."
 
-Ask chat: "What would you ask this table?" Count to five. If the room is quiet, say "The three I prepared are when, where, and which class."
+5. Click `courses`. Click `+`, paste this, and click **Run**.
 
-Run the statements in `sql/03_queries.sql` one at a time. The whole file at once hides the earlier results.
+```sql
+SELECT name, credits
+FROM courses
+ORDER BY name;
+```
 
-**Query A, when.** " `time_bucket` staples every session into a clock hour. Then we average focus. Hour 10 means 10am Eastern, even if the cloud clock is UTC."
+Say: "Here are the four courses. This is a normal table too."
 
-Expect the first row to be **10 AM, 92.7 focus, 180 sessions**. The bottom of the list is **11 PM, 37.5**. Every hour has 180 sessions because six students logged that hour on all 30 days.
+6. Filter to **Hypertables** and click `study_sessions`. Point at the approximate row count, about 2,880, and at the chunk timeline. Then click `+`, paste this, and click **Run**, so the room sees real sessions and not only the chart.
 
-**Query B, where.** "Weeknights, 5pm to 8pm. Library versus dorm."
+```sql
+SELECT
+  time AT TIME ZONE 'America/New_York' AS time_eastern,
+  student,
+  course,
+  spot,
+  focus_score
+FROM study_sessions
+ORDER BY time DESC
+LIMIT 8;
+```
 
-Expect **Library 77.3** and **Dorm 60.6**. Session counts depend on how many weekdays fall in this particular month. Talk about the averages.
+Say: "These chunks are the time slices. Each one covers about a week. I did not create them one by one. The database did that when the rows arrived."
 
-**Query C, which class.** "For 23 days each student stays on a home course, 30 minutes. In the last 7 days Maya, Alex, Jordan, and Sam switch every session to Databases and those sessions become 50 minutes."
+7. Filter to **Caggs**. The list is empty. Say: "The daily summary is not here yet. We will build it after the questions."
+8. Open the SQL editor again. The floating editor, or **SQL Editor** at the bottom, both work. A query you already ran in Explorer also shows up in the scratchpad tab.
 
-Expect:
+## 25:00–36:00 — The questions
 
-- Databases, earlier 23 days, **960** minutes a day, then final 7 days **3200**
-- Data Structures, **960**, and no final-week row. Say: "Jordan and Sam left Data Structures. A missing row is the switch, not a bug."
-- Calculus **480** then **480**. Writing **480** then **480**.
+Ask chat: "What would you ask this table?" Count to five. If the room is quiet, say: "I'll start with when people focus, and then I'll look at where."
 
-Why this block exists: raw rows are a diary, and buckets are the summary a person wants. How: three prepared questions, each using `time_bucket`.
+Run the statements in `sql/03_queries.sql` one at a time, in the order they appear. Highlight a single statement. Running the whole file hides the earlier results. For each statement, read **What the SQL does**, **Expected result**, and **What that result means**, then say the line above it.
 
-**If a query errors:** read the rescue under that query in the SQL file, say it, and go to the next query. Do not edit SQL on camera.
+The order is the story. First, the best hour and the worst hour. Then the most focused place and the least focused place. Then where they actually spend the month. Then the late, high-caffeine hours. Then the join back to students and courses. Last is the week before the deadline, which is the question the summary repeats. Do not recite a second set of numbers from this guide.
 
-## 33:00–38:00 — Continuous aggregate
+Why this block exists: raw rows are individual sessions, and a grouped query is the hour, the place, or the day a person actually wants. How: six prepared questions, run one at a time.
 
-Run `sql/05_continuous_aggregate.sql` one block at a time. Wait for each success. Pasting the whole file can fail because the refresh needs the view to exist outside the statement that created it. Skip the Explorer click in this block. The second month needs the time.
+## 36:00–40:00 — Continuous aggregate
 
-**Block 1.** "A continuous aggregate is a materialized view TimescaleDB knows how to refresh. `WITH NO DATA` creates the page immediately, empty, so we are not stuck waiting inside the create."
+Run `sql/04_continuous_aggregate.sql` one block at a time. Wait for each block to finish before you paste the next one. The refresh has to run after the view exists.
 
-**Block 2.** "This fills `study_daily` now: one row per course per day. A dashboard reads that page instead of rereading 2,880 sessions every time it loads."
+For each block, read the three labels, then say the line there. The last statement is the one-month summary. Use it only before `sql/05`. After the second month, the label "earlier 23 days" mixes both months. That statement is:
 
-**Block 3.** "This schedules the refresh we are not waiting for. Once an hour, recent daily buckets get updated. The integer on screen is a job id. Any integer means the schedule exists."
+```sql
+SELECT
+  CASE
+    WHEN (day AT TIME ZONE 'America/New_York')::date
+         >= (timezone('America/New_York', now()))::date - 7
+      THEN 'final 7 days'
+    ELSE 'earlier 23 days'
+  END AS period,
+  course,
+  (sum(total_minutes) / count(*))::integer AS avg_minutes_per_day
+FROM study_daily
+GROUP BY period, course
+ORDER BY course, period;
+```
 
-**Block 4.** "Same deadline question. The numbers should match the earlier query, because the summary was built from the same sessions. Databases 960 then 3,200. Calculus and Writing stay at 480."
+After block 2, show the summary as an object, then come back for blocks 3 and 4. Stay in **Ops view** and open **Explorer**. In the **Schemas** pane, filter to **Caggs** and click `study_daily`. That tab shows its size, whether real-time aggregation is on, and the refresh period. Say: "This is the summary. It is its own object now, instead of a query we have to rerun by hand." Do not click **Convert to columnstore**. The last statement in the file already shows the summary rows.
 
 Why: the point of the feature is to not rescan history on every page load. How: create empty, fill once on camera, show the schedule, read the summary.
 
-**If block 1 rejects `timezone`:** use the rescue view in the SQL file and say the summary days are UTC for this run. The jump should still be visible. Do not promise 960 and 3200 after switching to UTC buckets.
+## 40:00–44:00 — Another month
 
-**If block 3 fails:** the page is already filled. Skip the schedule and run block 4.
+Run `sql/05_second_month.sql` one block at a time. This does not rebuild `students` or `courses`. It adds the 30 days before the month already loaded.
 
-## 38:00–43:00 — Another month
+For each block, read the three labels above that statement, then say the line there. Block 2 has two statements. Run the span first:
 
-Run `sql/06_second_month.sql` one block at a time. This does not rebuild `students` or `courses`. It adds the 30 days before the month already loaded.
+```sql
+SELECT
+  min((day AT TIME ZONE 'America/New_York')::date) AS oldest_day,
+  max((day AT TIME ZONE 'America/New_York')::date) AS newest_day,
+  count(*) AS summary_rows
+FROM study_daily;
+```
 
-**Block 1.** "Another month of the same log. Everyone stays on their home course. The raw table goes from 2,880 sessions to 5,760. The summary has not been rewritten yet."
+Then run the single older day:
 
-**Block 2, span query first.** "The summary query can already see the new rows. The oldest day jumps back 30 days, and the summary grows from 113 rows to 233."
+```sql
+SELECT
+  course,
+  total_minutes
+FROM study_daily
+WHERE (day AT TIME ZONE 'America/New_York')::date
+      = (timezone('America/New_York', now()))::date - 45
+ORDER BY course;
+```
 
-**Block 2, older-day query second.** "A day in that older month is the steady pattern: Databases and Data Structures at 960 minutes, Calculus and Writing at 480. The cram week is still only the recent 7 days."
-
-**Block 3.** "The hourly schedule only looks back 30 days, so it would not have stored this older month on its own. This refresh writes those days into the summary."
-
-**Block 4.** "Same oldest day, same 233 rows. The refresh saved what the previous read already showed."
+Do not run the one-month summary from `sql/04` again. That is the query shown in the previous section, the one that splits "earlier 23 days" from "final 7 days."
 
 Why: new sessions do not erase the deadline week, and an older month outside the 30-day schedule has to be refreshed on purpose. How: insert, read the summary, refresh, read it again.
 
-**If the span query still shows 113 rows:** real-time aggregation is off. That is not a failure. Run block 3, then run the two block 2 queries again. The change appears after the refresh.
-
-**If sessions is 8,640:** the file was pasted twice. On stream, do not reset. Describe the older-day pattern from the script and close.
-
-## 43:00–45:00 — Send them home
+## 44:00–45:00 — Send them home
 
 Put the repository URL on screen in the editor as a comment, or just say it and leave it in the chat:
 
@@ -196,22 +214,55 @@ Put the repository URL on screen in the editor as a comment, or just say it and 
 -- Repo: paste your URL here before the stream
 ```
 
-Say: "Same shape for any of these. A timestamp, a thing you measure, a question over time. An API's latency. A game season. A personal Wrapped for music, gym, or coffee. The SQL files in this repo are the replay. The picture of the tables is `SCHEMA.md`."
+Say: "Any of these has the same shape. You need a timestamp, something you measure, and a question over time. That might be an API's latency, a game season, or a personal Wrapped for music, gym, or coffee. The SQL files in this repo are the replay, and the picture of the tables is SCHEMA.md."
 
 Stop talking while the URL is readable.
 
 ## If you are behind
 
-- If Explorer takes more than 20 seconds to find, skip the rest of the tour and start the questions.
-- Minute 30: skip `sql/04_alternates.sql`.
-- Minute 36: skip the policy. Refresh and run the last `SELECT`.
-- Minute 40: if you have not started the second month, skip it and close.
+- Minute 33: if you have not compared the earlier 23 days with the final 7 days, run this and then open `sql/04`. Leave the remaining statements in `sql/03_queries.sql`.
+
+```sql
+SELECT
+  CASE
+    WHEN day >= (timezone('America/New_York', now()))::date - 7
+      THEN 'final 7 days'
+    ELSE 'earlier 23 days'
+  END AS period,
+  course,
+  (sum(total_minutes) / count(*))::integer AS avg_minutes_per_day
+FROM (
+  SELECT
+    (time_bucket('1 day', time, timezone => 'America/New_York') AT TIME ZONE 'America/New_York')::date AS day,
+    course,
+    sum(minutes) AS total_minutes
+  FROM study_sessions
+  GROUP BY day, course
+) AS daily
+GROUP BY period, course
+ORDER BY course, period;
+```
+
+- Minute 38: skip the schedule. Run the refresh, then the summary:
+
+```sql
+CALL refresh_continuous_aggregate('study_daily', NULL, NULL);
+```
+
+```sql
+SELECT
+  CASE
+    WHEN (day AT TIME ZONE 'America/New_York')::date
+         >= (timezone('America/New_York', now()))::date - 7
+      THEN 'final 7 days'
+    ELSE 'earlier 23 days'
+  END AS period,
+  course,
+  (sum(total_minutes) / count(*))::integer AS avg_minutes_per_day
+FROM study_daily
+GROUP BY period, course
+ORDER BY course, period;
+```
+
+- Minute 42: if you have not started the second month, skip `sql/05_second_month.sql` and close.
 - The close can be three project ideas and the URL.
-
-## Optional answers
-
-Only if asked, and only the matching query in `sql/04_alternates.sql`.
-
-- "Who had the most caffeine and the least focus?" First row: **Jordan Blake, 11 PM, 160mg, focus 35.0**. Point at that row. Later rows are other late nights.
-- "Which spot is busiest?" **Library**, about 1,300 to 1,350 sessions. Cafe and Dorm are each under about 810. Say Library is first.
-- "Where are the students?" Run the join. Maya, Alex, Jordan, and Sam each have two courses because of the cram week. Priya and Riley have one.

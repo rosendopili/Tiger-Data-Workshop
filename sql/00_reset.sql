@@ -3,16 +3,18 @@
 -- On the livestream, skip it if the service is already empty.
 --
 -- SAY THIS
--- "I'm clearing yesterday's rehearsal so we start from an empty database."
+-- "I'm clearing yesterday's rehearsal, so we start from an empty database."
 --
--- EXPECT THIS
--- DROP MATERIALIZED VIEW and DROP TABLE lines. No error if the objects
--- were already gone.
+-- WHAT THE SQL DOES
+-- It drops whatever the last run left behind: the daily summary, the
+-- session log, and the student and course tables.
 --
--- IF THIS FAILS
--- Read the error once. If it names a different view or table you created
--- while practicing, drop that object, then run this file again.
--- Do not debug on stream past one retry.
+-- EXPECTED RESULT
+-- You should see DROP MATERIALIZED VIEW and DROP TABLE. If those objects
+-- were already gone, that is fine too.
+--
+-- WHAT THAT RESULT MEANS
+-- The focus-log service has no workshop tables. The next files build them again.
 
 DROP MATERIALIZED VIEW IF EXISTS study_daily CASCADE;
 DROP TABLE IF EXISTS study_sessions;

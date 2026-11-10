@@ -1,6 +1,6 @@
 # Focus Log schema
 
-This is the picture behind the live demo. `students` and `courses` are ordinary PostgreSQL tables. `study_sessions` is a hypertable: same SQL, with TimescaleDB splitting the rows into time chunks. `study_daily` does not exist until `sql/05_continuous_aggregate.sql`. It is a continuous aggregate, a summary TimescaleDB refreshes for you.
+This is the picture behind the live demo. `students` and `courses` are ordinary PostgreSQL tables. `study_sessions` is a hypertable: same SQL, with TimescaleDB splitting the rows into time chunks. `study_daily` does not exist until `sql/04_continuous_aggregate.sql`. It is a continuous aggregate, a summary TimescaleDB refreshes for you.
 
 The demo joins on `name`. It does not declare foreign keys, so the livestream paste stays in two steps: create the hypertable, then load the lookup tables and the sessions.
 
@@ -44,7 +44,7 @@ flowchart LR
 
 Chunks are storage chapters inside the hypertable. The demo does not create a chunk table by hand. After the seed, `timescaledb_information.chunks` lists those chapters. Each one holds about a week.
 
-`study_daily` stores one row per course per Eastern day: total minutes, average focus, and how many sessions that day contained. A dashboard reads that summary instead of scanning every session. After the first month is summarized, `sql/06_second_month.sql` inserts the previous 30 days. `study_daily` gains those older days when the new sessions are read and the summary is refreshed.
+`study_daily` stores one row per course per Eastern day: total minutes, average focus, and how many sessions that day contained. A dashboard reads that summary instead of scanning every session. After the first month is summarized, `sql/05_second_month.sql` inserts the previous 30 days. `study_daily` gains those older days when the new sessions are read and the summary is refreshed.
 
 ## What is stored
 
@@ -71,15 +71,16 @@ Chunks are storage chapters inside the hypertable. The demo does not create a ch
 
 | Question | Computed from |
 | --- | --- |
-| Best hour to study | `time` grouped into clock hours, then `avg(focus_score)` |
-| Library vs dorm on weeknights | `time` filtered to Monday–Friday, 5pm–8pm, then `avg(focus_score)` by `spot` |
+| Best and worst hour | `time` grouped into clock hours, then `avg(focus_score)`, highest first |
+| Most and least focused place | `avg(focus_score)` by `spot`, highest first |
+| Where they sit | `count(*)` by `spot` |
+| Late caffeine | `caffeine_mg = 160`, then the lowest `focus_score` by student and hour |
+| Students beside their courses | `study_sessions` joined to `students` and `courses`, then `sum(minutes)` |
 | Deadline jump | `time` grouped into Eastern days, then `sum(minutes)` by `course` |
-| Caffeine vs focus | `caffeine_mg = 160`, then the lowest `focus_score` by student and hour |
-| Busiest spot | `count(*)` by `spot` |
 
 ## How the planted patterns use those columns
 
 - **Hour and focus.** The seed starts from a score for each clock hour, highest at 10:00 (base 90) and lowest at 23:00 (base 46). Spot and a Jordan penalty are applied after that, then the score is clamped to 35–98. The hour query should show **10 AM at 92.7** and **11 PM at 37.5**.
-- **Spot and focus.** From 8:00am to 4:00pm everyone is in the Library except Priya and Sam, who use the Cafe. On weekday evenings from 5:00pm to 8:00pm, Maya, Priya, and Riley are in the Library, and Jordan, Alex, and Sam are in the Dorm. Weekend evenings in that range are the Cafe. From 9:00pm on, everyone is in the Dorm. The Library adds 6 focus points. The Dorm subtracts 8. Weeknight Library focus should be **77.3**, Dorm **60.6**.
+- **Spot and focus.** From 8:00am to 4:00pm everyone is in the Library except Priya and Sam, who use the Cafe. On weekday evenings from 5:00pm to 8:00pm, Maya, Priya, and Riley are in the Library, and Jordan, Alex, and Sam are in the Dorm. Weekend evenings in that range are the Cafe. From 9:00pm on, everyone is in the Dorm. The Library adds 6 focus points. The Dorm subtracts 8. Across the whole month the Library averages **79.1** and the Dorm averages **about 48**. The Cafe sits around **74**. On weeknights from 5pm to 8pm alone, the Library is **77.3** and the Dorm is **60.6**. The workshop query averages the whole month, so the Library is the first row and the Dorm is the last.
 - **The last 7 days, course, and minutes.** For the first 23 days each student stays on a home course: Maya and Alex on Databases, Jordan and Sam on Data Structures, Priya on Calculus, Riley on Writing. In the last 7 days Maya, Alex, Jordan, and Sam switch every session to Databases, and those sessions go from 30 minutes to 50. Daily Databases minutes go from **960 to 3,200**. Calculus and Writing stay at **480**. Data Structures has no rows in the final week.
 - **Caffeine.** 0mg from 8:00am to 4:00pm, 80mg from 5:00pm to 8:00pm, 160mg from 9:00pm to 11:00pm. Jordan has an extra −8 focus on every session, so the low end of the 160mg rows is **Jordan Blake at 11 PM, focus 35.0**.

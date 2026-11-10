@@ -1,24 +1,28 @@
 -- 02_seed.sql
--- Clock: still inside minutes 14–23. Paste this whole file as one run.
+-- Clock: minutes 14–20. Paste this whole file as one run.
 -- The insert is deterministic. Rehearsal and the livestream produce the
 -- same focus scores, courses, and spots. Hours are America/New_York.
 --
 -- SAY THIS
--- "Six students, every hour from 8am to 11pm Eastern, for the 30 days
--- ending yesterday. That is 2,880 study sessions. The patterns are
--- planted: focus peaks at 10am, the library beats the dorm on weeknights,
--- and Databases jumps in the last week because four students start cramming."
+-- "I'm loading six students, every hour from 8am to 11pm Eastern, for the
+-- 30 days that end yesterday. That comes out to 2,880 study sessions.
+-- I planted the patterns, so we already know what the questions should
+-- find. Focus peaks at 10am and falls off by 11pm. The library is the
+-- best place, and the dorm is the worst. Databases jumps in the last week."
 --
--- EXPECT THIS
+-- WHAT THE SQL DOES
+-- It creates the student and course tables, loads the first month of
+-- sessions, counts those rows, and lists the time slices that now hold them.
+--
+-- EXPECTED RESULT
 -- INSERT 0 6, INSERT 0 4, INSERT 0 2880.
--- The last grid is the chunk list: several weekly chapters, not one table.
--- The count query just above it shows sessions = 2880.
+-- The count grid shows sessions = 2880.
+-- The last grid is a handful of chunks, each covering about a week.
 --
--- IF THIS FAILS
--- "relation students already exists" or "duplicate key": run
--- sql/00_reset.sql, then sql/01_hypertable.sql, then this file.
--- If the insert is slow, wait. It should finish in a few seconds.
--- Do not generate a bigger series on stream.
+-- WHAT THAT RESULT MEANS
+-- The month is loaded. 2,880 is 6 students, 16 hours a day, 30 days.
+-- The chunk list is the time split. Those slices were created by the
+-- insert. You did not make a table for each week.
 
 CREATE TABLE students (
   name TEXT PRIMARY KEY,
@@ -139,8 +143,3 @@ SELECT
 FROM timescaledb_information.chunks
 WHERE hypertable_name = 'study_sessions'
 ORDER BY range_start;
-
--- RESCUE if the chunk query errors on a column name.
--- The insert already worked. Paste only this:
---
--- SELECT show_chunks('study_sessions');
