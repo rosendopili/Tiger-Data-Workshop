@@ -7,11 +7,13 @@
 -- BLOCK 1 — insert the older month
 -- SAY THIS
 -- "Another month of the same log, the 30 days before the month we already
--- have. Everyone stays on their home course. The raw log grows. The
--- summary has not been rewritten yet."
+-- have. Everyone stays on their home course. The raw log now covers 60
+-- days: 5,760 sessions, oldest day 60 days ago."
 -- EXPECT THIS
--- INSERT 0 2880. The count grid shows sessions = 5760.
+-- INSERT 0 2880.
+-- sessions = 5760, oldest_day is 60 days ago, newest_day is yesterday.
 -- IF THIS FAILS
+-- If sessions is already 5760, the insert already happened. Skip to BLOCK 3.
 -- If sessions is 8640, this file was run twice. Say "that was a double
 -- paste" and run sql/00_reset.sql only if you are rehearsing. On stream,
 -- skip to the close.
@@ -92,26 +94,65 @@ FROM (
   ) AS slot
 ) AS built;
 
-SELECT count(*) AS sessions FROM study_sessions;
+SELECT
+  count(*) AS sessions,
+  min((time AT TIME ZONE 'America/New_York')::date) AS oldest_day,
+  max((time AT TIME ZONE 'America/New_York')::date) AS newest_day
+FROM study_sessions;
 
--- BLOCK 2 — read the summary again
+-- BLOCK 2 — the summary is still the first month
 -- SAY THIS
--- "The summary query can see the new rows. The oldest day jumps back 30
--- days. The summary grows from 113 rows to 233. A day in that older month
--- is the steady pattern: Databases and Data Structures at 960 minutes,
--- Calculus and Writing at 480. The cram week is still only the recent
--- 7 days."
+-- "The raw log has two months. The summary still has one. Reading
+-- study_daily does not reach back into older raw rows. It only has the
+-- days that were written into it, and the hourly schedule only looks
+-- back 30 days."
+-- EXPECT THIS
+-- oldest_day is about 30 days ago, newest_day is yesterday,
+-- summary_rows = 113.
+-- IF THIS FAILS
+-- If summary_rows is already 233, the older month was refreshed on an
+-- earlier run. Skip to BLOCK 4.
+-- Do not rerun the "earlier 23 days" query from sql/05. That label now
+-- mixes two months and still prints 960, so it hides the new month.
+
+SELECT
+  min((day AT TIME ZONE 'America/New_York')::date) AS oldest_day,
+  max((day AT TIME ZONE 'America/New_York')::date) AS newest_day,
+  count(*) AS summary_rows
+FROM study_daily;
+
+-- BLOCK 3 — write the older month into the summary
+-- SAY THIS
+-- "The first refresh only stored the month that existed then. Refreshing
+-- again with no dates does not go back for this older month. This call
+-- names the last 70 days and forces those days to be rewritten."
+-- EXPECT THIS
+-- CALL, with no error.
+-- IF THIS FAILS
+-- If "force" is rejected, paste the rescue at the bottom, then BLOCK 4.
+-- Otherwise paste this CALL again as its own statement.
+
+CALL refresh_continuous_aggregate(
+  'study_daily',
+  now() - INTERVAL '70 days',
+  now() + INTERVAL '1 day',
+  force => true
+);
+
+-- BLOCK 4 — the summary now covers both months
+-- SAY THIS
+-- "Now the oldest day jumps back 30 days, and the summary grows from 113
+-- rows to 233. A day in that older month is the steady pattern: Databases
+-- and Data Structures at 960 minutes, Calculus and Writing at 480. The
+-- cram week is still only the recent 7 days."
 -- EXPECT THIS
 -- Span query: oldest_day is 60 days ago, newest_day is yesterday,
 -- summary_rows = 233.
 -- Older-day query, four rows: Calculus 480, Data Structures 960,
 -- Databases 960, Writing 480.
 -- IF THIS FAILS
--- If summary_rows is still 113, real-time aggregation is off. That is not
--- a failure. Run BLOCK 3, then run these two queries again. The change
--- appears after the refresh.
--- Do not rerun the "earlier 23 days" query from sql/05. That label now
--- mixes two months.
+-- Run BLOCK 3 once more, then these two queries. If the span is still
+-- about 30 days, describe the steady pattern from this comment and close.
 
 SELECT
   min((day AT TIME ZONE 'America/New_York')::date) AS oldest_day,
@@ -127,30 +168,10 @@ WHERE (day AT TIME ZONE 'America/New_York')::date
       = (timezone('America/New_York', now()))::date - 45
 ORDER BY course;
 
--- BLOCK 3 — store the older month in the summary
--- SAY THIS
--- "The hourly schedule only looks back 30 days, so it would not have
--- stored this older month on its own. This refresh writes those days
--- into the summary."
--- EXPECT THIS
--- CALL, with no error.
--- IF THIS FAILS
--- Paste the CALL again as its own statement. The span query in BLOCK 2
--- already showed the new month. You can close without this refresh.
-
-CALL refresh_continuous_aggregate('study_daily', NULL, NULL);
-
--- BLOCK 4 — same span, now stored
--- SAY THIS
--- "Same oldest day, same 233 summary rows. The refresh saved what the
--- previous read already showed."
--- EXPECT THIS
--- oldest_day is 60 days ago, newest_day is yesterday, summary_rows = 233.
--- IF THIS FAILS
--- Use the BLOCK 2 result and move to the close.
-
-SELECT
-  min((day AT TIME ZONE 'America/New_York')::date) AS oldest_day,
-  max((day AT TIME ZONE 'America/New_York')::date) AS newest_day,
-  count(*) AS summary_rows
-FROM study_daily;
+-- RESCUE, only if BLOCK 3 rejects the force argument.
+--
+-- CALL refresh_continuous_aggregate(
+--   'study_daily',
+--   now() - INTERVAL '70 days',
+--   now() + INTERVAL '1 day'
+-- );

@@ -172,19 +172,21 @@ Why: the point of the feature is to not rescan history on every page load. How: 
 
 Run `sql/06_second_month.sql` one block at a time. This does not rebuild `students` or `courses`. It adds the 30 days before the month already loaded.
 
-**Block 1.** "Another month of the same log. Everyone stays on their home course. The raw table goes from 2,880 sessions to 5,760. The summary has not been rewritten yet."
+**Block 1.** "Another month of the same log. Everyone stays on their home course. The raw table goes from 2,880 sessions to 5,760, and the oldest day is 60 days ago."
 
-**Block 2, span query first.** "The summary query can already see the new rows. The oldest day jumps back 30 days, and the summary grows from 113 rows to 233."
+**Block 2.** "The raw log has two months. The summary still has one: about 113 rows, oldest day about 30 days ago. Reading the summary does not reach back into those older sessions."
 
-**Block 2, older-day query second.** "A day in that older month is the steady pattern: Databases and Data Structures at 960 minutes, Calculus and Writing at 480. The cram week is still only the recent 7 days."
+**Block 3.** "The first refresh only stored the month that existed then. Refreshing again with no dates does not go back for this older month. The hourly schedule only looks back 30 days, so it will not either. This call names the last 70 days and forces those days to be rewritten."
 
-**Block 3.** "The hourly schedule only looks back 30 days, so it would not have stored this older month on its own. This refresh writes those days into the summary."
+**Block 4, span query first.** "Now the oldest day jumps back 30 days, and the summary grows from 113 rows to 233."
 
-**Block 4.** "Same oldest day, same 233 rows. The refresh saved what the previous read already showed."
+**Block 4, older-day query second.** "A day in that older month is the steady pattern: Databases and Data Structures at 960 minutes, Calculus and Writing at 480. The cram week is still only the recent 7 days."
 
-Why: new sessions do not erase the deadline week, and an older month outside the 30-day schedule has to be refreshed on purpose. How: insert, read the summary, refresh, read it again.
+Why: a continuous aggregate keeps the days it has already stored. An older month has to be refreshed on purpose, or the summary keeps answering as if that month were not there. How: insert, show that the summary is unchanged, refresh a named window, read the summary again.
 
-**If the span query still shows 113 rows:** real-time aggregation is off. That is not a failure. Run block 3, then run the two block 2 queries again. The change appears after the refresh.
+**If block 2 already shows 233 rows:** this database was refreshed on an earlier run. Skip to block 4 and read the numbers.
+
+**If block 4 still shows about 113 rows:** run block 3 once more, then block 4. If it is still one month, describe the 960 and 480 pattern from the script and close.
 
 **If sessions is 8,640:** the file was pasted twice. On stream, do not reset. Describe the older-day pattern from the script and close.
 

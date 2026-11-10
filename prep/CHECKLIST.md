@@ -41,7 +41,7 @@ Create one Tiger Cloud service. Do not create a second service, a replica, or a 
   4. Click **Explorer** on `focus-log`. Confirm `students`, `courses`, and `study_sessions`. Open `study_sessions` and confirm the chunk timeline. The **Caggs** filter should be empty.
   5. Each statement in `sql/03_queries.sql`, one at a time
   6. Each block in `sql/05_continuous_aggregate.sql`, one at a time
-  7. Each block in `sql/06_second_month.sql`, one at a time. Sessions become 5,760. The summary's oldest day is about 60 days back, and `summary_rows` is 233.
+  7. Each block in `sql/06_second_month.sql`, one at a time. Sessions become 5,760 and the raw oldest day is about 60 days back. The summary query before the refresh is still one month, about 113 rows. After the refresh, `summary_rows` is 233 and the summary's oldest day is about 60 days back.
 14. Confirm the shape, not just that it ran: 10 AM focus is 92.7, 11 PM is 37.5, weeknight Library is 77.3 and Dorm is 60.6, Databases goes from 960 minutes a day to 3,200. After `sql/06`, an older day shows Databases and Data Structures at 960, and Calculus and Writing at 480.
 15. Run `sql/00_reset.sql` again when rehearsal is over so the livestream starts empty.
 16. For every later run, start with `sql/00_reset.sql` in the same SQL editor, then build from `sql/01_hypertable.sql` onward. Keep the `focus-log` service. Destroy the tables, not the service.

@@ -23,7 +23,7 @@ The picture of the tables is [SCHEMA.md](SCHEMA.md). The timed script, including
 
 You do not need to bring a dataset. `sql/02_seed.sql` generates it.
 
-Six students, every hour from 8:00am through 11:00pm Eastern, for the 30 days ending yesterday. That is 2,880 rows in `study_sessions`. `sql/06_second_month.sql` adds the 30 days before that, another 2,880 rows, after the daily summary exists. `students` and `courses` are small ordinary tables beside the log.
+Six students, every hour from 8:00am through 11:00pm Eastern, for the 30 days ending yesterday. That is 2,880 rows in `study_sessions`. `sql/06_second_month.sql` adds the 30 days before that, another 2,880 rows, after the daily summary exists. The summary stays on the first month until that file refreshes the older window. `students` and `courses` are small ordinary tables beside the log.
 
 The seed is deterministic. These results are the ones the demo expects:
 
