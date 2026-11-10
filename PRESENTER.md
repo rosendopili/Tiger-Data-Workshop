@@ -180,31 +180,11 @@ Why: the point of the feature is to not rescan history on every page load. How: 
 
 Run `sql/05_second_month.sql` one block at a time. This does not rebuild `students` or `courses`. It adds the 30 days before the month already loaded.
 
-For each block, read the three labels above that statement, then say the line there. Block 2 has two statements. Run the span first:
-
-```sql
-SELECT
-  min((day AT TIME ZONE 'America/New_York')::date) AS oldest_day,
-  max((day AT TIME ZONE 'America/New_York')::date) AS newest_day,
-  count(*) AS summary_rows
-FROM study_daily;
-```
-
-Then run the single older day:
-
-```sql
-SELECT
-  course,
-  total_minutes
-FROM study_daily
-WHERE (day AT TIME ZONE 'America/New_York')::date
-      = (timezone('America/New_York', now()))::date - 45
-ORDER BY course;
-```
+For each block, read the three labels above that statement, then say the line there. Block 2 is one statement, and it should still be one month: about 113 rows, oldest day about 30 days ago. Block 4 has two statements. Run the span first, then the single older day.
 
 Do not run the one-month summary from `sql/04` again. That is the query shown in the previous section, the one that splits "earlier 23 days" from "final 7 days."
 
-Why: new sessions do not erase the deadline week, and an older month outside the 30-day schedule has to be refreshed on purpose. How: insert, read the summary, refresh, read it again.
+Why: a continuous aggregate keeps the days it has already stored. Reading it does not reach back into older raw rows, and a refresh with no dates does not go back for them either. How: insert, show that the summary is unchanged, refresh the last 70 days, read the summary again.
 
 ## 44:00–45:00 — Send them home
 

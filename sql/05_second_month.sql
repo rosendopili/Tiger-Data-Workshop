@@ -12,15 +12,18 @@
 --
 -- WHAT THE SQL DOES
 -- It inserts 2,880 more sessions for the older month. It does not recreate
--- students or courses. Then it counts every session in the table.
+-- students or courses. Then it counts every session and shows the oldest
+-- and newest day in the raw log.
 --
 -- EXPECTED RESULT
--- INSERT 0 2880. The count grid shows sessions = 5760.
+-- INSERT 0 2880.
+-- sessions = 5760, oldest_day is 60 days ago, newest_day is yesterday.
 --
 -- WHAT THAT RESULT MEANS
 -- The raw log now holds two months. This insert does not rewrite the
 -- daily summary. The Databases cram is still only the most recent 7 days.
 -- These older days are home courses at 30 minutes.
+-- If sessions is already 5760, skip this insert and run BLOCK 3.
 
 INSERT INTO study_sessions (time, student, course, spot, minutes, focus_score, caffeine_mg)
 SELECT
@@ -98,25 +101,31 @@ FROM (
   ) AS slot
 ) AS built;
 
-SELECT count(*) AS sessions FROM study_sessions;
+SELECT
+  count(*) AS sessions,
+  min((time AT TIME ZONE 'America/New_York')::date) AS oldest_day,
+  max((time AT TIME ZONE 'America/New_York')::date) AS newest_day
+FROM study_sessions;
 
--- BLOCK 2 — how wide the summary is now
+-- BLOCK 2 — the summary is still the first month
 -- SAY THIS
--- "The summary can already see those new days. The oldest day jumps back
--- a month, and the number of summary rows grows from 113 to 233."
+-- "The raw log has two months. The summary still has one. Reading it does
+-- not reach back into those older sessions."
 --
 -- WHAT THE SQL DOES
 -- It reads the summary, not the raw sessions, and reports the oldest day,
 -- the newest day, and how many summary rows exist.
 --
 -- EXPECTED RESULT
--- oldest_day is 60 days ago, newest_day is yesterday, summary_rows = 233.
+-- oldest_day is about 30 days ago, newest_day is yesterday,
+-- summary_rows = 113.
 --
 -- WHAT THAT RESULT MEANS
--- The summary grew because the older month arrived. 113 rows was one
--- month. 233 is two. The newest day is still yesterday, so the cram week
--- is still the end of the log. Do not rerun the "earlier 23 days" query
--- from sql/04. That label would mix both months and hide the change.
+-- One month is still what the summary has stored. A continuous aggregate
+-- does not fold older raw rows into a read. The hourly job only looks
+-- back 30 days, so it will not store this older month either. Do not
+-- rerun the "earlier 23 days" query from sql/04. That label mixes both
+-- months and still prints 960, which hides the new month.
 
 SELECT
   min((day AT TIME ZONE 'America/New_York')::date) AS oldest_day,
@@ -124,23 +133,59 @@ SELECT
   count(*) AS summary_rows
 FROM study_daily;
 
--- BLOCK 2, second query — one day in the older month
+-- BLOCK 3 — write the older month into the summary
 -- SAY THIS
--- "Here is one day from that older month. Everyone is still on a home
--- course, so it should look like a normal day, before anyone started
--- cramming."
+-- "The first refresh only stored the month that existed then. Refreshing
+-- again with no dates does not go back for this older month. This call
+-- names the last 70 days and forces those days to be rewritten."
 --
 -- WHAT THE SQL DOES
--- It reads one Eastern day from the older month, 45 days ago, and shows
--- each course's stored minutes.
+-- It recomputes every daily bucket in the last 70 days, including the
+-- month that is older than the 30-day schedule.
 --
 -- EXPECTED RESULT
--- Four rows: Calculus 480, Data Structures 960, Databases 960, Writing 480.
+-- CALL, with no error.
 --
 -- WHAT THAT RESULT MEANS
--- That day is before the cram. Databases is only Maya and Alex, at 30
--- minutes a session. The 3,200-minute week is still only the most recent
--- 7 days.
+-- The older days are now saved in the summary. Left alone, the hourly
+-- job would keep refreshing the recent month and leave this older month
+-- unstored.
+-- If "force" is rejected, run the rescue at the bottom, then BLOCK 4.
+
+CALL refresh_continuous_aggregate(
+  'study_daily',
+  now() - INTERVAL '70 days',
+  now() + INTERVAL '1 day',
+  force => true
+);
+
+-- BLOCK 4 — the summary now covers both months
+-- SAY THIS
+-- "Now the oldest day jumps back a month, and the summary grows from 113
+-- rows to 233. One day in that older month is a normal day, before anyone
+-- started cramming."
+--
+-- WHAT THE SQL DOES
+-- The first statement reads the oldest day, the newest day, and the row
+-- count. The second reads one Eastern day from the older month, 45 days
+-- ago, and shows each course's stored minutes.
+--
+-- EXPECTED RESULT
+-- Span query: oldest_day is 60 days ago, newest_day is yesterday,
+-- summary_rows = 233.
+-- Older-day query, four rows: Calculus 480, Data Structures 960,
+-- Databases 960, Writing 480.
+--
+-- WHAT THAT RESULT MEANS
+-- Two months of daily totals are stored. That older day is before the
+-- cram: Databases is only Maya and Alex, at 30 minutes a session. The
+-- 3,200-minute week is still only the most recent 7 days.
+
+SELECT
+  min((day AT TIME ZONE 'America/New_York')::date) AS oldest_day,
+  max((day AT TIME ZONE 'America/New_York')::date) AS newest_day,
+  count(*) AS summary_rows
+FROM study_daily;
 
 SELECT
   course,
@@ -150,43 +195,10 @@ WHERE (day AT TIME ZONE 'America/New_York')::date
       = (timezone('America/New_York', now()))::date - 45
 ORDER BY course;
 
--- BLOCK 3 — store the older month in the summary
--- SAY THIS
--- "The hourly job only looks back 30 days, so it would have missed this
--- older month. This refresh writes those days into the summary."
+-- RESCUE, only if BLOCK 3 rejects the force argument.
 --
--- WHAT THE SQL DOES
--- It rewrites the stored part of study_daily across the whole log,
--- including the month that is older than the 30-day schedule.
---
--- EXPECTED RESULT
--- CALL, with no error.
---
--- WHAT THAT RESULT MEANS
--- The older days are now saved in the summary. Left alone, the hourly
--- job would keep refreshing the recent month and leave this older month
--- unstored.
-
-CALL refresh_continuous_aggregate('study_daily', NULL, NULL);
-
--- BLOCK 4 — same span, now stored
--- SAY THIS
--- "You should see the same oldest day and the same 233 rows. The refresh
--- saved the older month, and the story did not change."
---
--- WHAT THE SQL DOES
--- It reads the oldest day, the newest day, and the summary row count
--- again, after the refresh.
---
--- EXPECTED RESULT
--- oldest_day is 60 days ago, newest_day is yesterday, summary_rows = 233.
---
--- WHAT THAT RESULT MEANS
--- The numbers match the read you did before the refresh. Two months of
--- daily totals are stored, and the cram week is still at the recent end.
-
-SELECT
-  min((day AT TIME ZONE 'America/New_York')::date) AS oldest_day,
-  max((day AT TIME ZONE 'America/New_York')::date) AS newest_day,
-  count(*) AS summary_rows
-FROM study_daily;
+-- CALL refresh_continuous_aggregate(
+--   'study_daily',
+--   now() - INTERVAL '70 days',
+--   now() + INTERVAL '1 day'
+-- );
