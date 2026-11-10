@@ -198,6 +198,8 @@ Say: "Any of these has the same shape. You need a timestamp, something you measu
 
 Stop talking while the URL is readable.
 
+If someone asks how an assistant can query this database, point them at the section at the bottom of this file. Do not install anything on stream.
+
 ## If you are behind
 
 - Minute 33: if you have not compared the earlier 23 days with the final 7 days, run this and then open `sql/04`. Leave the remaining statements in `sql/03_queries.sql`.
@@ -246,3 +248,22 @@ ORDER BY course, period;
 
 - Minute 42: if you have not started the second month, skip `sql/05_second_month.sql` and close.
 - The close can be three project ideas and the URL.
+
+## After the stream — query focus-log from an assistant
+
+Tiger Cloud already includes this. The server is called Tiger MCP, and it ships inside the Tiger CLI. You do not write a server for Focus Log. An assistant on your machine can run SQL against the `focus-log` service with your Tiger Cloud login. It is not a public link other people can open.
+
+Do this on your own machine, before or after the livestream. The `focus-log` service was created as Development, so a read-only setting that only covers production services would leave it writable. `db_query` can insert and change schema. This setting makes the database reject writes:
+
+```bash
+tiger auth login
+tiger service list
+tiger config set read_only all
+tiger mcp install
+```
+
+When `tiger mcp install` asks which client, choose `cursor`, then restart Cursor. The server shows up as `tiger`. In `tiger service list`, use the service named `focus-log`. The service id in that list may differ from the name.
+
+Ask the assistant: "Using Tiger MCP, query the focus-log service. What is the oldest day and row count in study_daily, and what is the average focus by hour?"
+
+The setup page, if a command has changed, is https://www.tigerdata.com/docs/get-started/quickstart/mcp-cli.
