@@ -44,7 +44,7 @@ flowchart LR
 
 Chunks are storage chapters inside the hypertable. The demo does not create a chunk table by hand. After the seed, `timescaledb_information.chunks` lists those chapters. Each one holds about a week.
 
-`study_daily` stores one row per course per Eastern day: total minutes, average focus, and how many sessions that day contained. A dashboard reads that summary instead of scanning every session. After the first month is summarized, `sql/05_second_month.sql` inserts the previous 30 days. `study_daily` gains those older days when the new sessions are read and the summary is refreshed.
+`study_daily` stores one row per course per Eastern day: total minutes, average focus, and how many sessions that day contained. A dashboard reads that summary instead of scanning every session. After the first month is summarized, `sql/05_second_month.sql` inserts the previous 30 days. `study_daily` stays on the first month until that older window is refreshed on purpose. A read of the summary does not reach back into the new raw rows by itself.
 
 ## What is stored
 

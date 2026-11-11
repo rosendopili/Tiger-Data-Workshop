@@ -180,31 +180,11 @@ Why: the point of the feature is to not rescan history on every page load. How: 
 
 Run `sql/05_second_month.sql` one block at a time. This does not rebuild `students` or `courses`. It adds the 30 days before the month already loaded.
 
-For each block, read the three labels above that statement, then say the line there. Block 2 has two statements. Run the span first:
-
-```sql
-SELECT
-  min((day AT TIME ZONE 'America/New_York')::date) AS oldest_day,
-  max((day AT TIME ZONE 'America/New_York')::date) AS newest_day,
-  count(*) AS summary_rows
-FROM study_daily;
-```
-
-Then run the single older day:
-
-```sql
-SELECT
-  course,
-  total_minutes
-FROM study_daily
-WHERE (day AT TIME ZONE 'America/New_York')::date
-      = (timezone('America/New_York', now()))::date - 45
-ORDER BY course;
-```
+For each block, read the three labels above that statement, then say the line there. Block 2 is one statement, and it should still be one month: about 113 rows, oldest day about 30 days ago. Block 4 has two statements. Run the span first, then the single older day.
 
 Do not run the one-month summary from `sql/04` again. That is the query shown in the previous section, the one that splits "earlier 23 days" from "final 7 days."
 
-Why: new sessions do not erase the deadline week, and an older month outside the 30-day schedule has to be refreshed on purpose. How: insert, read the summary, refresh, read it again.
+Why: a continuous aggregate keeps the days it has already stored. Reading it does not reach back into older raw rows, and a refresh with no dates does not go back for them either. How: insert, show that the summary is unchanged, refresh the last 70 days, read the summary again.
 
 ## 44:00–45:00 — Send them home
 
@@ -217,6 +197,8 @@ Put the repository URL on screen in the editor as a comment, or just say it and 
 Say: "Any of these has the same shape. You need a timestamp, something you measure, and a question over time. That might be an API's latency, a game season, or a personal Wrapped for music, gym, or coffee. The SQL files in this repo are the replay, and the picture of the tables is SCHEMA.md."
 
 Stop talking while the URL is readable.
+
+If someone asks how an assistant can query this database, point them at the section at the bottom of this file. Do not install anything on stream.
 
 ## If you are behind
 
@@ -266,3 +248,22 @@ ORDER BY course, period;
 
 - Minute 42: if you have not started the second month, skip `sql/05_second_month.sql` and close.
 - The close can be three project ideas and the URL.
+
+## After the stream — query focus-log from an assistant
+
+Tiger Cloud already includes this. The server is called Tiger MCP, and it ships inside the Tiger CLI. You do not write a server for Focus Log. An assistant on your machine can run SQL against the `focus-log` service with your Tiger Cloud login. It is not a public link other people can open.
+
+Do this on your own machine, before or after the livestream. The `focus-log` service was created as Development, so a read-only setting that only covers production services would leave it writable. `db_query` can insert and change schema. This setting makes the database reject writes:
+
+```bash
+tiger auth login
+tiger service list
+tiger config set read_only all
+tiger mcp install
+```
+
+When `tiger mcp install` asks which client, choose `cursor`, then restart Cursor. The server shows up as `tiger`. In `tiger service list`, use the service named `focus-log`. The service id in that list may differ from the name.
+
+Ask the assistant: "Using Tiger MCP, query the focus-log service. What is the oldest day and row count in study_daily, and what is the average focus by hour?"
+
+The setup page, if a command has changed, is https://www.tigerdata.com/docs/get-started/quickstart/mcp-cli.
